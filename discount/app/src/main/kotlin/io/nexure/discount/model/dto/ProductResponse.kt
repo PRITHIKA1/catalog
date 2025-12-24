@@ -17,10 +17,10 @@ data class ProductResponse(
             return ProductResponse(
                 id = product.id,
                 name = product.name,
-                country = product.country,
+                country = Country.fromJson(product.country),
                 discounts = product.discounts,
                 basePrice = product.basePrice,
-                finalPrice = finalPrice(product.basePrice, product.country.vat, product.discounts)
+                finalPrice = finalPrice(product.basePrice, Country.fromJson(product.country).vat, product.discounts)
             )
         }
 

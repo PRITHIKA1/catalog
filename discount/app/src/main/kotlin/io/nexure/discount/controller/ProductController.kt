@@ -9,16 +9,13 @@ import io.ktor.server.routing.*
 import io.nexure.discount.exceptions.DiscountException
 import io.nexure.discount.model.dto.ApplyDiscountRequest
 import io.nexure.discount.plugin.API_URL_PREFIX
-import io.nexure.discount.plugin.DIConfig
 import io.nexure.discount.service.ProductService
 import io.nexure.discount.util.ApplicationConstants.HeaderConstants.COUNTRY
 import io.nexure.discount.util.ApplicationConstants.HeaderConstants.PRODUCT_ID
-import org.kodein.di.instance
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-fun Application.configureProductController() {
-    val productService: ProductService by DIConfig.di.instance()
+fun Application.configureProductController(productService: ProductService) {
     val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     routing {

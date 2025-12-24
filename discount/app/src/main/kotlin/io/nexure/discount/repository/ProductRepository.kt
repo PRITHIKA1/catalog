@@ -23,7 +23,7 @@ class ProductRepository(
     override suspend fun getProductsByCountry(country: Country): List<Product> {
         return try {
             productsCollection
-                .find(Product::country eq country)
+                .find(Product::country eq country.countryName)
                 .toList()
         } catch (e: Exception) {
             throw DatabaseOperationException(
@@ -35,7 +35,7 @@ class ProductRepository(
     override suspend fun applyDiscount(productId: String, discountId: String, percent: Double): Boolean {
         return try {
             val update = combine(
-                setOnInsert(Product::discounts, emptyList<Discount>()),
+                setOnInsert(Product::discounts, emptyList()),
                 push(Product::discounts, Discount(discountId, percent))
             )
 
