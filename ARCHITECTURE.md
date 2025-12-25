@@ -54,6 +54,87 @@ Controller Layer (HTTP) → Service Layer (Business Logic) → Repository Layer 
 - Higher latency for join operations when fetching products with discounts
 - More rigid schema makes rapid iteration harder
 
+### Proposed MongoDB Schema
+
+Our MongoDB document structure is designed to support atomic operations and efficient querying:
+
+```json
+{
+  "_id": "PROD001",
+  "id": "PROD001",
+  "name": "Wireless Headphones",
+  "basePrice": 100.0,
+  "country": "Sweden",
+  "discounts": [
+    {
+      "discountId": "DISC001",
+      "percent": 10.0
+    },
+    {
+      "discountId": "DISC002",
+      "percent": 5.0
+    }
+  ]
+}
+```
+
+**Schema Design Rationale:**
+
+1. **Embedded Discounts Array**: 
+   - Discounts are embedded within the product document
+   - Allows atomic updates to the entire product state
+   - Single database operation to fetch product with all discounts
+   - No need for JOIN operations
+
+2. **Product ID as Document ID**:
+   - Uses `_id` field for natural indexing
+   - Ensures uniqueness at database level
+   - Fast lookups by product ID
+
+3. **Country as String**:
+   - Simple indexing for country-based queries
+   - Indexed field for efficient filtering: `db.products.createIndex({ "country": 1 })`
+
+4. **Flat Discount Structure**:
+   - Each discount has only `discountId` and `percent`
+   - Simple structure for atomic array operations
+   - Easy to query: `{ "discounts.discountId": "DISC001" }`
+
+**Index Strategy:**
+
+```javascript
+// Primary index on country for GET /products?country=X
+db.products.createIndex({ "country": 1 })
+
+
+**Alternative Schema Considered (Rejected):**
+
+```json
+// ❌ Normalized approach - Separate collections
+// products collection:
+{
+  "_id": "PROD001",
+  "name": "Wireless Headphones",
+  "basePrice": 100.0,
+  "country": "Sweden"
+}
+
+// discounts collection:
+{
+  "_id": "DISC001",
+  "productId": "PROD001",
+  "percent": 10.0
+}
+```
+
+**Why Embedded Design is Superior:**
+- ❌ Normalized: Requires JOIN-like operations (`$lookup`) or multiple queries
+- ❌ Normalized: Cannot update product + discount atomically
+- ❌ Normalized: More complex to ensure discount uniqueness per product
+- ✅ Embedded: Single atomic operation for entire product state
+- ✅ Embedded: Natural document boundary matches business entity
+- ✅ Embedded: Better performance for read-heavy workloads
+
 ## Concurrency Strategy
 
 ### The Concurrency Challenge
@@ -107,6 +188,9 @@ val result = productsCollection.updateOne(filter, update)
 
 
 ### Proof from Mongo Official Documentation
+
+**Reference**: [MongoDB Write Operations Atomicity](https://www.mongodb.com/docs/v8.0/core/write-operations-atomicity)
+
 #### Atomicity and Transactions
 
 In MongoDB, a write operation is [atomic](https://mongodbcom-cdn.staging.corp.mongodb.com/docs/reference/glossary/#std-term-atomic-operation) on the level of a single document, even if the operation modifies multiple values. When multiple update commands happen in parallel, each individual command ensures that the query condition still matches.
