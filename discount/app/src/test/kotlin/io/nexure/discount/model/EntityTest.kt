@@ -1,5 +1,7 @@
-package io.nexure.discount.model.entity
+package io.nexure.discount.model
 
+import io.nexure.discount.model.entity.Discount
+import io.nexure.discount.model.entity.Product
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.DisplayName
