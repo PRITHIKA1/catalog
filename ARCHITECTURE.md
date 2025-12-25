@@ -105,6 +105,45 @@ val result = productsCollection.updateOne(filter, update)
 - Database-level consistency without application-level coordination
 - Works correctly even with multiple application instances behind a load balancer
 
+
+### Proof from Mongo Official Documentation
+#### Atomicity and Transactions
+
+In MongoDB, a write operation is [atomic](https://mongodbcom-cdn.staging.corp.mongodb.com/docs/reference/glossary/#std-term-atomic-operation) on the level of a single document, even if the operation modifies multiple values. When multiple update commands happen in parallel, each individual command ensures that the query condition still matches.
+
+To guarantee that concurrent update commands do not conflict with each other, you can specify the expected current value of a field in the update filter.
+
+#### Example
+
+Consider a collection with this document:
+
+```javascript
+db.games.insertOne( { _id: 1, score: 80 } )
+```
+
+These update operations occur concurrently:
+
+```javascript
+// Update A
+db.games.updateOne(
+   { score: 80 },
+   {
+      $set: { score: 90 }
+   }
+)
+
+// Update B
+db.games.updateOne(
+   { score: 80 },
+   {
+      $set: { score: 100 }
+   }
+)
+```
+
+One update operation sets the document's `score` field to either `90` or `100`. After this update completes, the second update operation no longer matches the query predicate `{ score: 80 }`, and is not performed.
+
+
 ### Why Application-Level Locks Don't Work
 
 **Application-level locks (mutex, synchronized blocks) are ineffective for distributed systems:**
