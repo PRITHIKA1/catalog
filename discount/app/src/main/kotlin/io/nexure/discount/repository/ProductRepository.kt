@@ -1,6 +1,5 @@
 package io.nexure.discount.repository
 
-import com.mongodb.MongoWriteException
 import io.nexure.discount.config.CatalogDBConfiguration
 import io.nexure.discount.exceptions.DatabaseOperationException
 import io.nexure.discount.exceptions.DiscountAlreadyAppliedException
@@ -8,11 +7,12 @@ import io.nexure.discount.model.entity.Discount
 import io.nexure.discount.model.entity.Product
 import io.nexure.discount.model.enum.Country
 import io.nexure.discount.util.ApplicationConstants.PRODUCTS_COLLECTION
-import org.litote.kmongo.setOnInsert
-import org.litote.kmongo.coroutine.CoroutineCollection
+import org.litote.kmongo.and
+import com.mongodb.client.model.Filters.not
+import org.litote.kmongo.elemMatch
 import org.litote.kmongo.eq
 import org.litote.kmongo.push
-import org.litote.kmongo.combine
+import org.litote.kmongo.coroutine.CoroutineCollection
 
 
 class ProductRepository(
@@ -32,26 +32,28 @@ class ProductRepository(
         }
     }
 
-    override suspend fun applyDiscount(productId: String, discountId: String, percent: Double): Boolean {
-        return try {
-            val update = combine(
-                setOnInsert(Product::discounts, emptyList()),
-                push(Product::discounts, Discount(discountId, percent))
-            )
-
-            val result = productsCollection.updateOne(
+    override suspend fun applyDiscount(
+        productId: String,
+        discountId: String,
+        percent: Double
+    ): Boolean {
+        try {
+            val filter = and(
                 Product::id eq productId,
-                update
+                not(Product::discounts.elemMatch(Discount::discountId eq discountId))
             )
-            result.modifiedCount > 0
-        } catch (e: MongoWriteException) {
-            if (e.error.code == 11000) {
-                throw DiscountAlreadyAppliedException("productId: $productId")
-            } else {
-                throw DatabaseOperationException("productId: $productId Error: ${e.message}")
+            val update = push(Product::discounts, Discount(discountId, percent))
+            val result = productsCollection.updateOne(filter, update)
+
+            if (result.matchedCount == 0L) {
+                throw DiscountAlreadyAppliedException("Discount already applied or product not found")
             }
+            return result.modifiedCount > 0
+
+        } catch (e: DiscountAlreadyAppliedException) {
+            throw e
         } catch (e: Exception) {
-            throw DatabaseOperationException("productId: $productId Error: ${e.message}")
+            throw DatabaseOperationException("Database operation failed for productId=$productId. Error: ${e.message}")
         }
     }
 }

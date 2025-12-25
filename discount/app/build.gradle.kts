@@ -41,8 +41,15 @@ dependencies {
 
     // Tests
     testImplementation("io.ktor:ktor-server-tests-jvm:2.3.7")
+    testImplementation("io.ktor:ktor-client-core:2.3.7")
+    testImplementation("io.ktor:ktor-client-cio:2.3.7")
+    testImplementation("io.ktor:ktor-client-content-negotiation:2.3.7")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.testcontainers:mongodb:1.19.3")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
+    testImplementation("io.mockk:mockk:1.13.8")
 }
 
 java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
