@@ -26,7 +26,7 @@ data class ProductResponse(
 
         fun finalPrice(basePrice: Double, vat: Double, discounts: List<Discount>): Double {
             val totalDiscount = discounts.sumOf { it.percent } / 100.0
-            return basePrice * (1 - totalDiscount) * (1 + vat)
+            return basePrice * (1 - totalDiscount) * (1 + vat / 100.0)
         }
     }
 }

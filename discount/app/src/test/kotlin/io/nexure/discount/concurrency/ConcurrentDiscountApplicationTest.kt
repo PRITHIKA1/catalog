@@ -1,4 +1,4 @@
-package io.nexure.discount
+package io.nexure.discount.concurrency
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
